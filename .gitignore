@@ -1,0 +1,17 @@
+
+.DS_Store
+.pyenv
+node_modules
+npm-debug.log
+bower_components
+dist
+*.swp
+*.swo
+*~
+__pycache__
+*.pyc
+*.pyo
+*.tmp
+site.properties
+.secret
+.vagrant
