@@ -10,40 +10,43 @@ ANSIBLE := $(VIRTUAL_ENV)/bin/ansible
 ANSIBLE_CONFIG := $(abspath ansible/config)
 ANSIBLE_INVENTORY := $(abspath host)
 
-# alternative to '--provider linode' option in vagrant commands
-VAGRANT_DEFAULT_PROVIDER := linode
+
+export VIRTUAL_ENV
+export LINODE_HOSTNAME
+export LINODE_API_KEY
+export LINODE_SSH_USER
+export LINODE_SSH_KEY_LOCATION
+export LINODE_SERVER_LABEL
+export LINODE_IP_ADDRESS
+export ANSIBLE_CONFIG
+export ANSIBLE_SSH_PORT
+
+# the initial vagrant command to create a linode machine
+VAGRANT_UP := vagrant up --provider linode --provision-with shell 
+
+# grep 'vagrant status' to see if the machine exists or not
+GREP_LINODE_IS_ACTIVE := vagrant status | grep -soh "^Linode is active" >/dev/null 2>&1
 
 # grep command to get IP address from vagrant output
 GREP_IP_ADDRESS := grep -soh -m 1 "[[:space:]]Assigned IP address:[[:space:]][.[:digit:]]*"
 
 # print the ansible inventory given the output from $GREP_IP_ADDRESS
-AWK_WRITE_INVENTORY := awk '{print "\nsaltmaster ansible_host=$$4 ansible_port=$(ANSIBLE_SSH_PORT)\n"}'
+AWK_WRITE_INVENTORY := awk '{print "\nsaltmaster ansible_host="$$4" ansible_port=$(ANSIBLE_SSH_PORT)\n"}'
 
-# grep for ansible_port setting in the ansible inventory and delete any non-digit from output
-GREP_INVENTORY_PORT := grep -soh "ansible_port=[[:digit:]]\+" $(ANSIBLE_INVENTORY) | tr -dc '[:digit:]'
+# check if linode is created or not
+LINODE_IS_ACTIVE_CMD = $$($(GREP_LINODE_IS_ACTIVE))
 
-# pick up the server ssh port from the ansible inventory file if it exists
-# (the inventory is created dynamically by 'make deploy')
-LINODE_SSH_PORT := $(shell $(GREP_INVENTORY_PORT))
-LINODE_SSH_PORT ?= 22
+# If the machine has been created, then the shell provisioner will have updated
+# the ssh port to be $(ANSIBLE_SSH_PORT), otherwise set it to the default 22.
+LINODE_SSH_PORT_CMD = $$($(GREP_LINODE_IS_ACTIVE) && echo $(ANSIBLE_SSH_PORT) || echo 22)
 
 
-export VIRTUAL_ENV
-export VAGRANT_DEFAULT_PROVIDER
-export LINODE_HOSTNAME
-export LINODE_API_KEY
-export LINODE_SSH_USER
-export LINODE_SSH_PORT
-export LINODE_SSH_KEY_LOCATION
-export LINODE_SERVER_LABEL
-export LINODE_IP_ADDRESS
-export ANSIBLE_CONFIG
 
-.PHONY: venv deploy provision ssh halt destroy ping
+.PHONY: apt venv deploy provision status ssh halt destroy ping debug environ
 
 default:
 	@echo "sudo make apt"
-	@echo "    -> install system dependencies (build-essential, libssl-dev etc.)"
+	@echo "    -> install (local) system dependencies required for ansible provisioner (build-essential, libssl-dev etc.)"
 	@echo "make deploy"
 	@echo "    -> create a new linode machine via the vagrant-linode plugin"
 	@echo "make provision"
@@ -62,20 +65,26 @@ venv:
 	fi;
 
 deploy: venv
-	@echo "::::: Creating linode..."
-	@vagrant up --provision-with shell | tee /dev/tty | $(GREP_IP_ADDRESS) |  > $(ANSIBLE_INVENTORY)
+	@if [ $(LINODE_IS_ACTIVE_CMD) ]; then \
+		echo "Linode is created and active."; \
+		exit 2; \
+	else \
+		echo "::::: Deploying linode..."; \
+	    $(VAGRANT_UP) | tee /dev/tty | $(GREP_IP_ADDRESS) | $(AWK_WRITE_INVENTORY) > $(ANSIBLE_INVENTORY); \
+	fi
+
+debug:
+	@cat input | $(GREP_IP_ADDRESS) | $(AWK_WRITE_INVENTORY)
 
 provision:
 	@echo "::::: Provisioning linode..."
-	@. $(VIRTUAL_ENV)/bin/activate && vagrant provision --provision-with ansible
+	@. $(VIRTUAL_ENV)/bin/activate && LINODE_SSH_PORT=$(LINODE_SSH_PORT_CMD) vagrant provision --provision-with ansible
 
-environ:
-	@echo "LINODE_HOSTNAME = $(LINODE_HOSTNAME)"
-	@echo "LINODE_SSH_PORT = $(LINODE_SSH_PORT)"
-	@echo "ANSIBLE_SSH_PORT = $(ANSIBLE_SSH_PORT)"
-	
+status:
+	@LINODE_SSH_PORT=$(LINODE_SSH_PORT_CMD) vagrant status
+
 ssh:
-	@vagrant ssh
+	@LINODE_SSH_PORT=$(LINODE_SSH_PORT_CMD) vagrant ssh
 
 halt:
 	@vagrant halt
@@ -85,3 +94,9 @@ destroy:
 
 ping:
 	@$(ANSIBLE) all -m ping -u $(LINODE_SSH_USER)
+
+environ:
+	@echo "LINODE_HOSTNAME = $(LINODE_HOSTNAME)"
+	@echo "LINODE_SSH_PORT = $(LINODE_SSH_PORT_CMD)"
+	@echo "ANSIBLE_SSH_PORT = $(ANSIBLE_SSH_PORT)"
+	

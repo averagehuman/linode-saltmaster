@@ -9,6 +9,7 @@ Vagrant.configure('2') do |config|
         ## SSH Configuration
         override.ssh.username = ENV['LINODE_SSH_USER']
         override.ssh.private_key_path = ENV['LINODE_SSH_KEY_LOCATION']
+        override.ssh.port = ENV['LINODE_SSH_PORT']
 
         #Linode Settings
         provider.token = ENV['LINODE_API_KEY']
