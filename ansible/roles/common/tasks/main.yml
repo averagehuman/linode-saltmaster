@@ -1,0 +1,25 @@
+
+- name: Update System Packages
+  apt: update_cache=yes upgrade=dist
+
+- name: Install git client
+  apt: name=git
+
+- name: Install ufw (firewall)
+  apt: name=ufw
+
+- name: Deny all incoming
+  ufw: policy=deny direction=incoming log=yes
+
+- name: Allow incoming ssh
+  ufw: rule=allow port={{ANSIBLE_SSH_PORT}} log=yes
+
+- name: Allow incoming jenkins web interface
+  ufw: rule=allow port={{jenkins_port}} log=yes
+
+- name: Limit ssh connections
+  ufw: rule=limit port={{ANSIBLE_SSH_PORT}} log=yes
+
+- name: Restart ufw
+  ufw: state=enabled logging=medium
+

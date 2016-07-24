@@ -34,12 +34,11 @@ GREP_IP_ADDRESS := grep -soh -m 1 "[[:space:]]Assigned IP address:[[:space:]][.[
 AWK_WRITE_INVENTORY := awk '{print "\nsaltmaster ansible_host="$$4" ansible_port=$(ANSIBLE_SSH_PORT)\n"}'
 
 # check if linode is created or not
-LINODE_IS_ACTIVE_CMD = $$($(GREP_LINODE_IS_ACTIVE))
+LINODE_IS_ACTIVE_CMD = $$($(GREP_LINODE_IS_ACTIVE) && echo $$?)
 
 # If the machine has been created, then the shell provisioner will have updated
 # the ssh port to be $(ANSIBLE_SSH_PORT), otherwise set it to the default 22.
 LINODE_SSH_PORT_CMD = $$($(GREP_LINODE_IS_ACTIVE) && echo $(ANSIBLE_SSH_PORT) || echo 22)
-
 
 
 .PHONY: apt venv deploy provision status ssh halt destroy ping debug environ
@@ -53,7 +52,7 @@ default:
 	@echo "    -> provision the newly created machine"
 
 apt:
-	@apt-get -y install build-essential libssl-dev libffi-dev python-dev
+	@apt-get -y install build-essential libssl-dev libffi-dev python-dev python-apt
 
 venv:
 	@if [ ! -e $(VIRTUAL_ENV) ]; then \
@@ -66,15 +65,24 @@ venv:
 
 deploy: venv
 	@if [ $(LINODE_IS_ACTIVE_CMD) ]; then \
-		echo "Linode is created and active."; \
+		echo "Linode is created and active. Run 'make provision' to finish the deployment."; \
 		exit 2; \
 	else \
-		echo "::::: Deploying linode..."; \
-	    $(VAGRANT_UP) | tee /dev/tty | $(GREP_IP_ADDRESS) | $(AWK_WRITE_INVENTORY) > $(ANSIBLE_INVENTORY); \
+	    if [ -e "$(ANSIBLE_INVENTORY)" ]; then \
+		    echo "Refusing to run 'make deploy' because it will overwrite the Ansible inventory."; \
+			echo " --> If the inventory is from a previous obsolete deploy then delete it. If it is "; \
+			echo " --> for a current deploy then there must have been an error as you shouldn't need"; \
+			echo " --> to run 'make deploy' more than once. If you really want to continue, then"; \
+	        echo " --> remove inventory file '$(ANSIBLE_INVENTORY)' and try again."; \
+			exit 2; \
+		else \
+			echo "::::: Deploying linode..."; \
+			$(VAGRANT_UP) | tee /dev/tty | $(GREP_IP_ADDRESS) | $(AWK_WRITE_INVENTORY) > $(ANSIBLE_INVENTORY); \
+		fi; \
 	fi
 
 debug:
-	@cat input | $(GREP_IP_ADDRESS) | $(AWK_WRITE_INVENTORY)
+	@if [ $(LINODE_IS_ACTIVE_CMD) ]; then echo "yes"; else echo "no"; fi
 
 provision:
 	@echo "::::: Provisioning linode..."

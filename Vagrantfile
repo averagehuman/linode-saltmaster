@@ -28,5 +28,6 @@ Vagrant.configure('2') do |config|
     config.vm.provision "ansible" do |ansible|
         ansible.playbook = 'ansible/playbook.yml'
         ansible.inventory_path = ENV['ANSIBLE_INVENTORY']
+        ansible.extra_vars = Hash(ENV)
     end
 end

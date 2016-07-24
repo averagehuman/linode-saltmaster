@@ -1,6 +1,6 @@
 
-hosts: all
-
-tasks:
-  - name: Install System Packages
-  apt:
+- name: apply common configuration to all nodes
+  hosts: all
+  become: true
+  roles:
+    - common
