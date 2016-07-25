@@ -30,6 +30,7 @@ GREP_LINODE_IS_ACTIVE := vagrant status | grep -soh "^Linode is active" >/dev/nu
 # grep command to get IP address from vagrant output
 GREP_IP_ADDRESS := grep -soh -m 1 "[[:space:]]Assigned IP address:[[:space:]][.[:digit:]]*"
 
+
 # print the ansible inventory given the output from $GREP_IP_ADDRESS
 AWK_WRITE_INVENTORY := awk '{print "\nsaltmaster ansible_host="$$4" ansible_port=$(ANSIBLE_SSH_PORT)\n"}'
 
@@ -40,6 +41,9 @@ LINODE_IS_ACTIVE_CMD = $$($(GREP_LINODE_IS_ACTIVE) && echo $$?)
 # the ssh port to be $(ANSIBLE_SSH_PORT), otherwise set it to the default 22.
 LINODE_SSH_PORT_CMD = $$($(GREP_LINODE_IS_ACTIVE) && echo $(ANSIBLE_SSH_PORT) || echo 22)
 
+# once the inventory file is written then we can grep it rather than invoking vagrant
+GREP_ANSIBLE_HOST_IP := grep -s "\bansible_host=" host | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}"
+GREP_ANSIBLE_HOST_PORT := grep -Eo "ansible_port=[0-9]+" host | tr -cd '[[:digit:]]'
 
 .PHONY: apt venv deploy provision status ssh halt destroy ping debug environ
 
@@ -92,10 +96,17 @@ status:
 	@LINODE_SSH_PORT=$(LINODE_SSH_PORT_CMD) vagrant status
 
 ssh:
-	@LINODE_SSH_PORT=$(LINODE_SSH_PORT_CMD) vagrant ssh
+	@if [ ! -e $(ANSIBLE_INVENTORY) ]; then \
+		LINODE_SSH_PORT=$(LINODE_SSH_PORT_CMD) vagrant ssh; \
+	else \
+		ssh $(LINODE_SSH_USER)@$$($(GREP_ANSIBLE_HOST_IP)) -p $$($(GREP_ANSIBLE_HOST_PORT)); \
+	fi
 
-halt:
+stop:
 	@vagrant halt
+
+start:
+	@vagrant up
 
 destroy:
 	@vagrant destroy
