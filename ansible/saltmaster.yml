@@ -5,4 +5,6 @@
   roles:
     - common
     - saltmaster
+    - python2
     - docker
+    - jenkins

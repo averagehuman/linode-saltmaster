@@ -6,6 +6,8 @@ Vagrant.configure('2') do |config|
         override.vm.box = 'linode'
         override.vm.box_url = "https://github.com/displague/vagrant-linode/raw/master/box/linode.box"
 
+        override.vm.synced_folder "share/", "/share", create: true, group: "saltadmin"
+
         ## SSH Configuration
         override.ssh.username = ENV['LINODE_SSH_USER']
         override.ssh.private_key_path = ENV['LINODE_SSH_KEY_LOCATION']

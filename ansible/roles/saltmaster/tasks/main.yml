@@ -1,4 +1,5 @@
 
+# Install salt-master service (-M) but not a salt-minion (-N)
 - name: Install saltmaster from bootstrap script
-  script: files/bootstrap-salt.sh -M creates=/etc/init.d/salt-master
+  script: files/bootstrap-salt.sh -M -N creates=/lib/systemd/system/salt-master.service
 

@@ -13,3 +13,6 @@
 
 - name: Install Docker
   apt: name=docker-engine state=present
+
+- name: Install docker-py
+  pip: name=docker-py version=1.9.0
