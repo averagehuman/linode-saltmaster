@@ -23,3 +23,9 @@
 - name: Restart ufw
   ufw: state=enabled logging=medium
 
+- name: Remove rpcbind network service
+  apt: name=rpcbind state=absent purge=yes
+
+- name: Remove exim4 network service
+  apt: name=exim4 state=absent purge=yes
+
