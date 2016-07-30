@@ -3,12 +3,12 @@
 ##################
 # update hostname
 ##################
-echo "$LINODE_HOSTNAME" > /etc/hostname
+echo "$HOSTNAME" > /etc/hostname
 
 hostname -F /etc/hostname
 
 ip=$(ip addr show eth0 | grep -Po 'inet \K[\d.]+')
-grep $LINODE_HOSTNAME /etc/hosts || echo "$ip   $ip $LINODE_HOSTNAME" >> /etc/hosts
+grep $HOSTNAME /etc/hosts || echo "$ip $HOSTNAME" >> /etc/hosts
 
 ######################
 # add privileged group

@@ -1,0 +1,8 @@
+
+- name: Provision box as saltmaster
+  hosts: all
+  become: true
+  roles:
+    - common
+    - saltmaster
+    - docker

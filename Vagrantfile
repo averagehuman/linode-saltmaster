@@ -16,17 +16,18 @@ Vagrant.configure('2') do |config|
         provider.distribution = 'Debian 8'
         provider.datacenter = 'london'
         provider.plan = '2048'
-        provider.label = ENV['LINODE_HOSTNAME']
+        provider.label = ENV['HOSTNAME']
 
     end
 
-    config.vm.provision "shell", run: "always" do |shell|
+    config.vm.provision "shell" do |shell|
         shell.path = 'init.sh'
         shell.env = Hash(ENV)
     end
 
     config.vm.provision "ansible" do |ansible|
-        ansible.playbook = 'ansible/playbook.yml'
+        ansible.limit = "all"
+        ansible.playbook = ENV['ANSIBLE_PLAYBOOK']
         ansible.inventory_path = ENV['ANSIBLE_INVENTORY']
         ansible.extra_vars = Hash(ENV)
     end

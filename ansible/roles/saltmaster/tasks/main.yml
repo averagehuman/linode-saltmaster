@@ -1,0 +1,4 @@
+
+- name: Install saltmaster from bootstrap script
+  script: files/bootstrap-salt.sh -M creates=/etc/init.d/salt-master
+

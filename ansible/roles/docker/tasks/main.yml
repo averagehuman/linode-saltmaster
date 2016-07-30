@@ -1,0 +1,15 @@
+
+- name: Add Docker Group
+  group: name=docker state=present
+
+- name: Add Admin User To Docker Group
+  user: name={{LINODE_SSH_USER}} groups=docker append=yes
+
+- name: Add Docker Signing Key
+  apt_key: keyserver='hkp://p80.pool.sks-keyservers.net:80' id=58118E89F3A912897C070ADBF76221572C52609D state=present
+
+- name: Add Docker Repo
+  apt_repository: repo='deb https://apt.dockerproject.org/repo debian-jessie main' filename='docker.list'
+
+- name: Install Docker
+  apt: name=docker-engine state=present
