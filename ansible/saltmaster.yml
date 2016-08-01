@@ -7,4 +7,5 @@
     - saltmaster
     - python2
     - docker
+    - nginx
     - jenkins

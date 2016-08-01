@@ -1,0 +1,37 @@
+
+- name: Ensure nginx root directory /var/www/jenkins
+  file: path=/var/www/jenkins state=directory
+
+- name: Ensure nginx log directory /var/log/nginx/jenkins
+  file: path=/var/log/nginx/jenkins state=directory owner=www-data group=www-data
+
+- name: Link jenkins images folder to /var/www/jenkins
+  file: src=/share/jenkins/war/images dest=/var/www/jenkins/images state=link force=yes
+
+- name: Link jenkins css folder to /var/www/jenkins
+  file: src=/share/jenkins/war/css dest=/var/www/jenkins/css state=link force=yes
+
+- name: Link jenkins scripts folder to /var/www/jenkins
+  file: src=/share/jenkins/war/scripts dest=/var/www/jenkins/scripts state=link force=yes
+
+- name: Link jenkins jsbundles folder to /var/www/jenkins
+  file: src=/share/jenkins/war/jsbundles dest=/var/www/jenkins/jsbundles state=link force=yes
+
+- name: Link jenkins help folder to /var/www/jenkins
+  file: src=/share/jenkins/war/help dest=/var/www/jenkins/help state=link force=yes
+
+- name: Link jenkins favicon to /var/www/jenkins
+  file: src=/share/jenkins/war/favicon.ico dest=/var/www/jenkins/favicon.ico state=link
+
+- name: Link jenkins robots.txt to /var/www/jenkins
+  file: src=/share/jenkins/war/robots.txt dest=/var/www/jenkins/robots.txt state=link
+
+- name: Copy the jenkins nginx reverse proxy config to /etc/nginx/sites-available
+  copy: src=files/nginx.conf dest=/etc/nginx/sites-available/jenkins
+
+- name: Link /etc/nginx/sites-available/jenkins to /etc/nginx/sites-enabled
+  file: src=/etc/nginx/sites-available/jenkins dest=/etc/nginx/sites-enabled/jenkins state=link
+
+- name: Reload nginx
+  shell: systemctl restart nginx
+
