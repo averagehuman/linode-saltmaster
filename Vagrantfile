@@ -6,6 +6,10 @@ Vagrant.configure('2') do |config|
         override.vm.box = 'linode'
         override.vm.box_url = "https://github.com/displague/vagrant-linode/raw/master/box/linode.box"
 
+        # disable default synced folder
+        override.vm.synced_folder ".", "/vagrant", disabled: true
+
+        # sync local ./share directory with remote /share directory
         override.vm.synced_folder "share/", "/share", create: true, group: "saltadmin"
 
         ## SSH Configuration
