@@ -2,11 +2,7 @@
 linode-saltmaster
 =================
 
-Scripted deployment of a `saltstack`_ master node on `linode`_ via `vagrant`_
-and `ansible`_.
-
-Also installs `jenkins`_ on the same box.
-
+Remote deploy a `saltstack`_ master together with `jenkins`_ on `linode`_.
 
 Quickstart
 ----------
@@ -24,16 +20,26 @@ example::
 
 Then run::
 
-    $ make deploy
+    $ make init
 
-If that succeeded you should be able to ssh to the new linode machine::
+This will create the box and run an initial shell script to set the hostname and update
+the sshd config (including changing the default ssh port).
+
+If that succeeded you should now be able to ssh to the new linode machine::
 
     $ make ssh
 
-Keep this ssh session open and in another terminal run::
+Keep this ssh session open in case any problems come up.
 
-    $ make provision-saltmaster
+Now in another terminal run::
 
-which will invoke ansible to complete the installation.
+    $ make provision
 
+which will invoke `ansible`_ to complete the installation.
+
+
+.. _saltstack: https://saltstack.com/
+.. _jenkins: https://jenkins.io/
+.. _linode: https://www.linode.com/
+.. _ansible: https://www.ansible.com/
 

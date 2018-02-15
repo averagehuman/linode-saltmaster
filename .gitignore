@@ -15,4 +15,5 @@ __pycache__
 .linode
 .secret
 .vagrant
+.retry
 ansible/hosts/*

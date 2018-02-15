@@ -68,12 +68,12 @@ LINODE_SSH_PORT_CMD = $$($(GREP_LINODE_IS_ACTIVE) && echo $(ANSIBLE_SSH_PORT) ||
 GREP_ANSIBLE_HOST_IP := grep -s "\bansible_host=" $(ANSIBLE_INVENTORY) | grep -Eo "([0-9]{1,3}\.){3}[0-9]{1,3}"
 GREP_ANSIBLE_HOST_PORT := grep -Eo "ansible_port=[0-9]+" $(ANSIBLE_INVENTORY) | tr -cd '[[:digit:]]'
 
-.PHONY: apt venv deploy provision-saltmaster status ssh halt destroy ping debug environ
+.PHONY: apt venv init provision-saltmaster status ssh halt destroy ping debug environ
 
 default:
 	@echo "sudo make apt"
 	@echo "    -> install (local) system dependencies required for ansible provisioner (build-essential, libssl-dev etc.)"
-	@echo "make deploy"
+	@echo "make init"
 	@echo "    -> create a new linode machine and update and reload its sshd config"
 	@echo "make provision-saltmaster"
 	@echo "    -> provision the newly created machine as a saltmaster"
@@ -90,16 +90,16 @@ venv:
 		    $(PIP) install -r requirements.txt; \
 	fi;
 
-deploy: venv
+init: venv
 	@if [ $(LINODE_IS_ACTIVE_CMD) ]; then \
-		echo "Linode is created and active. Run a provision target to complete the deployment, eg. make provision-saltmaster"; \
+		echo "Linode is created and active. Run a provision target to complete the deployment, eg. make provision"; \
 		exit 2; \
 	else \
 	    if [ -e "$(ANSIBLE_INVENTORY)" ]; then \
-		    echo "Refusing to run 'make deploy' because it will overwrite the Ansible inventory."; \
+		    echo "Refusing to run 'make init' because it will overwrite the Ansible inventory."; \
 			echo " --> If the inventory is from a previous obsolete deploy then delete it. If it is "; \
 			echo " --> for a current deploy then there must have been an error as you shouldn't need"; \
-			echo " --> to run 'make deploy' more than once. If you really want to continue, then"; \
+			echo " --> to run 'make init' more than once. If you really want to continue, then"; \
 			echo " --> remove inventory file '$(ANSIBLE_INVENTORY)' and try again."; \
 			exit 2; \
 		else \
@@ -111,7 +111,7 @@ deploy: venv
 debug:
 	@echo "ssh $(LINODE_SSH_USER)@$$($(GREP_ANSIBLE_HOST_IP)) -p $(ANSIBLE_SSH_PORT)"
 
-provision-saltmaster:
+provision:
 	@echo "::::: Provisioning linode..."
 	@echo "PLAYBOOK = $(SALTMASTER_PLAYBOOK)"
 	@echo "INVENTORY = $(ANSIBLE_INVENTORY)"
@@ -129,6 +129,8 @@ ssh:
 
 stop:
 	@vagrant halt
+
+halt: stop
 
 start:
 	@LINODE_SSH_PORT=$(LINODE_SSH_PORT_CMD) vagrant up

@@ -1,0 +1,26 @@
+
+environment = {
+    HOSTNAME: "vagrant-saltmaster",
+    LINODE_SSH_USER: "saltadmin",
+    ANSIBLE_SSH_PORT: 22,
+}
+
+Vagrant.configure('2') do |config|
+
+    config.vm.box = 'debian/jessie64'
+
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+    config.vm.synced_folder "share/", "/share", create: true, group: "saltadmin"
+
+
+    config.vm.provision "shell" do |shell|
+        shell.path = '../init.sh'
+        shell.env = environment
+    end
+
+    config.vm.provision "ansible" do |ansible|
+        ansible.limit = "all"
+        ansible.playbook = "../ansible/saltmaster.yml"
+        ansible.extra_vars = environment
+    end
+end
